@@ -24,9 +24,11 @@
 			);
 		},
 		setItem: function( e, o, n, t, r, i ) {
-			if ( ! e || /^(?:expires|max\-age|path|domain|secure)$/i.test( e ) ) return ! 1;
+			if ( ! e || /^(?:expires|max\-age|path|domain|secure)$/i.test( e ) ) {
+				return ! 1;
+			}
 			var c = '';
-			if ( n )
+			if ( n ) {
 				switch ( n.constructor ) {
 					case Number:
 						c = n === 1 / 0 ? '; expires=Fri, 31 Dec 9999 23:59:59 GMT' : '; max-age=' + n;
@@ -37,6 +39,7 @@
 					case Date:
 						c = '; expires=' + n.toUTCString();
 				}
+			}
 			return (
 				( 'rootDomain' !== r && '.rootDomain' !== r ) ||
 					( r =
@@ -167,31 +170,39 @@
 	};
 
 	var doNotSellCallback = function() {
-		var dnsLink = document.querySelector( '.ccpa-do-not-sell' );
+		var dnsLinks = document.querySelectorAll( '.ccpa-do-not-sell' );
 
-		if ( dnsLink ) {
+		if ( 0 === dnsLinks.length ) {
+			return false;
+		}
+
+		Array.prototype.forEach.call( dnsLinks, function( dnsLink ) {
 			dnsLink.addEventListener( 'click', function( e ) {
 				e.preventDefault();
 
-				// Load cleanslate.css
-				var cleanslate = document.createElement( 'link' );
-				cleanslate.rel = 'stylesheet';
-				cleanslate.type = 'text/css';
-				cleanslate.href = ccpaSettings.cleanslateUrl;
-				document.getElementsByTagName( 'HEAD' )[ 0 ].appendChild( cleanslate );
+				if ( ! ccpaSettings.stylesLoaded ) {
+					// Load cleanslate.css
+					var cleanslate = document.createElement( 'link' );
+					cleanslate.rel = 'stylesheet';
+					cleanslate.type = 'text/css';
+					cleanslate.href = ccpaSettings.cleanslateUrl;
+					document.getElementsByTagName( 'HEAD' )[ 0 ].appendChild( cleanslate );
 
-				// Load wordads-ccpa.min.css
-				var ccpaCss = document.createElement( 'link' );
-				ccpaCss.rel = 'stylesheet';
-				ccpaCss.type = 'text/css';
-				ccpaCss.href = ccpaSettings.ccpaCssUrl;
-				document.getElementsByTagName( 'HEAD' )[ 0 ].appendChild( ccpaCss );
+					// Load wordads-ccpa.min.css
+					var ccpaCss = document.createElement( 'link' );
+					ccpaCss.rel = 'stylesheet';
+					ccpaCss.type = 'text/css';
+					ccpaCss.href = ccpaSettings.ccpaCssUrl;
+					document.getElementsByTagName( 'HEAD' )[ 0 ].appendChild( ccpaCss );
+
+					ccpaSettings.stylesLoaded = true;
+				}
 
 				injectModal();
 			} );
 
 			dnsLink.style.display = '';
-		}
+		} );
 
 		return true;
 	};
