@@ -127,8 +127,13 @@ class WordAds_Ccpa_Do_Not_Sell_Link_Widget extends WP_Widget {
 }
 
 function jetpack_wordads_widgets_init_callback() {
-	register_widget( 'WordAds_Ccpa_Do_Not_Sell_Link_Widget' );
 	register_widget( 'WordAds_Sidebar_Widget' );
+
+	$ccpa_enabled = get_option( 'wordads_ccpa_enabled' );
+
+	if ( $ccpa_enabled ) {
+		register_widget( 'WordAds_Ccpa_Do_Not_Sell_Link_Widget' );
+	}
 }
 
 add_action( 'widgets_init', 'jetpack_wordads_widgets_init_callback' );
