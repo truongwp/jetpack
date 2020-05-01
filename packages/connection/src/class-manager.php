@@ -1315,8 +1315,30 @@ class Manager {
 
 	/**
 	 * Deletes all connection tokens and transients from the local Jetpack site.
+	 * If the plugin object has been provided in the constructor, the function first checks
+	 * whether it's the only active connection.
+	 * If there are any other connections, the function will do nothing and return `false`
+	 * (unless `$ignore_connected_plugins` is set to `true`).
+	 *
+	 * @param bool $ignore_connected_plugins Delete the tokens even if there are other connected plugins.
+	 *
+	 * @return bool True if disconnected successfully, false otherwise.
 	 */
-	public function delete_all_connection_tokens() {
+	public function delete_all_connection_tokens( $ignore_connected_plugins = false ) {
+		if ( ! $ignore_connected_plugins && null !== $this->plugin && ! $this->plugin->is_only() ) {
+			return false;
+		}
+
+		/**
+		 * Fires upon the disconnect attempt.
+		 * Return `false` to prevent the disconnect.
+		 *
+		 * @since 8.5.0
+		 */
+		if ( ! apply_filters( 'jetpack_connection_delete_all_tokens', true, $this ) ) {
+			return false;
+		}
+
 		\Jetpack_Options::delete_option(
 			array(
 				'blog_token',
@@ -1333,14 +1355,40 @@ class Manager {
 		// Delete cached connected user data.
 		$transient_key = 'jetpack_connected_user_data_' . get_current_user_id();
 		delete_transient( $transient_key );
+
+		return true;
 	}
 
 	/**
 	 * Tells WordPress.com to disconnect the site and clear all tokens from cached site.
+	 * If the plugin object has been provided in the constructor, the function first check
+	 * whether it's the only active connection.
+	 * If there are any other connections, the function will do nothing and return `false`
+	 * (unless `$ignore_connected_plugins` is set to `true`).
+	 *
+	 * @param bool $ignore_connected_plugins Delete the tokens even if there are other connected plugins.
+	 *
+	 * @return bool True if disconnected successfully, false otherwise.
 	 */
-	public function disconnect_site_wpcom() {
+	public function disconnect_site_wpcom( $ignore_connected_plugins = false ) {
+		if ( ! $ignore_connected_plugins && null !== $this->plugin && ! $this->plugin->is_only() ) {
+			return false;
+		}
+
+		/**
+		 * Fires upon the disconnect attempt.
+		 * Return `false` to prevent the disconnect.
+		 *
+		 * @since 8.5.0
+		 */
+		if ( ! apply_filters( 'jetpack_connection_disconnect_site_wpcom', true, $this ) ) {
+			return false;
+		}
+
 		$xml = new \Jetpack_IXR_Client();
 		$xml->query( 'jetpack.deregister', get_current_user_id() );
+
+		return true;
 	}
 
 	/**
@@ -2253,12 +2301,55 @@ class Manager {
 	}
 
 	/**
-	 * Get all connected plugins information.
+	 * Get all connected plugins information, excluding those disconnected by user.
 	 *
-	 * @return array|\WP_Error
+	 * @return array
 	 */
 	public function get_connected_plugins() {
-		return Plugin_Storage::get_all();
+		return array_diff_key( Plugin_Storage::get_all(), array_flip( Plugin_Storage::get_all_disconnected_user_initiated() ) );
+	}
+
+	/**
+	 * Force plugin disconnect. After its called, the plugin will not be allowed to use the connection.
+	 * Note: this method does not remove any access tokens.
+	 *
+	 * @return bool
+	 */
+	public function disconnect_user_initiated() {
+		if ( ! $this->plugin ) {
+			return false;
+		}
+
+		return $this->plugin->disconnect_user_initiated();
+	}
+
+	/**
+	 * Force plugin reconnect after user-initiated disconnect.
+	 * After its called, the plugin will be allowed to use the connection again.
+	 * Note: this method does not initialize access tokens.
+	 *
+	 * @return bool
+	 */
+	public function connect_user_initiated() {
+		if ( ! $this->plugin ) {
+			return false;
+		}
+
+		return $this->plugin->reconnect_user_initiated();
+	}
+
+	/**
+	 * Whether the plugin is allowed to use the connection, or it's been disconnected by user.
+	 * If no plugin slug was passed into the constructor, always returns true.
+	 *
+	 * @return bool
+	 */
+	public function is_plugin_enabled() {
+		if ( ! $this->plugin ) {
+			return true;
+		}
+
+		return $this->plugin->is_enabled();
 	}
 
 }

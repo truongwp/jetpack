@@ -8,6 +8,7 @@
 namespace Automattic\Jetpack\Connection;
 
 use Automattic\Jetpack\Config;
+use Jetpack_Options;
 use WP_Error;
 
 /**
@@ -18,6 +19,8 @@ use WP_Error;
  * @todo Adapt for multisite installations.
  */
 class Plugin_Storage {
+
+	const DISCONNECTED_PLUGINS_OPTION_NAME = 'plugins_disconnected_user_initiated';
 
 	/**
 	 * Connected plugins.
@@ -100,6 +103,52 @@ class Plugin_Storage {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Add the plugin to the set of disconnected ones.
+	 *
+	 * @param string $slug Plugin slug.
+	 *
+	 * @return bool
+	 */
+	public static function disconnect_user_initiated( $slug ) {
+		$disconnects = self::get_all_disconnected_user_initiated();
+
+		if ( ! in_array( $slug, $disconnects, true ) ) {
+			$disconnects[] = $slug;
+			Jetpack_Options::update_option( self::DISCONNECTED_PLUGINS_OPTION_NAME, $disconnects );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Remove the plugin from the set of disconnected ones.
+	 *
+	 * @param string $slug Plugin slug.
+	 *
+	 * @return bool
+	 */
+	public static function reconnect_user_initiated( $slug ) {
+		$disconnects = self::get_all_disconnected_user_initiated();
+
+		$slug_index = array_search( $slug, $disconnects, true );
+		if ( false !== $slug_index ) {
+			unset( $disconnects[ $slug_index ] );
+			Jetpack_Options::update_option( self::DISCONNECTED_PLUGINS_OPTION_NAME, $disconnects );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Get all plugins that were disconnected by user.
+	 *
+	 * @return array
+	 */
+	public static function get_all_disconnected_user_initiated() {
+		return Jetpack_Options::get_option( self::DISCONNECTED_PLUGINS_OPTION_NAME, array() );
 	}
 
 }
