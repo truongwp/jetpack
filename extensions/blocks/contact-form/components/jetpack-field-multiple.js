@@ -14,7 +14,16 @@ import JetpackOption from './jetpack-option';
 import JetpackFieldControls from './jetpack-field-controls';
 
 function JetpackFieldMultiple( props ) {
-	const { type, instanceId, required, label, setAttributes, isSelected, options } = props;
+	const {
+		type,
+		instanceId,
+		required,
+		label,
+		setAttributes,
+		isSelected,
+		fieldWidth,
+		options,
+	} = props;
 
 	const [ inFocus, setInFocus ] = useState( null );
 
@@ -61,7 +70,6 @@ function JetpackFieldMultiple( props ) {
 						required={ required }
 						label={ label }
 						setAttributes={ setAttributes }
-						isSelected={ isSelected }
 						resetFocus={ () => setInFocus( null ) }
 					/>
 				}
@@ -95,7 +103,11 @@ function JetpackFieldMultiple( props ) {
 				) }
 			</BaseControl>
 
-			<JetpackFieldControls required={ required } setAttributes={ setAttributes } />
+			<JetpackFieldControls
+				required={ required }
+				setAttributes={ setAttributes }
+				fieldWidth={ fieldWidth }
+			/>
 		</Fragment>
 	);
 }
